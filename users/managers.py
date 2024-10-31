@@ -25,7 +25,7 @@ class UserManager(BaseUserManager):
 
         if is_yoga_user:
             YogaUser = apps.get_model("users.YogaUser")
-            YogaUser(user=user).save()
+            YogaUser(user=user, yoga_level=YogaUser.get_default_yoga_level()).save()
 
         return user
 

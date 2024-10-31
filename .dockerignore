@@ -1,7 +1,0 @@
-.git/
-.idea/
-venv/
-__pycache__/
-.env.template
-.gitignore
-Dockerfile

@@ -1,31 +1,33 @@
 from datetime import timedelta
+from os import environ, getenv
 from pathlib import Path
 from urllib.parse import urlparse
 
-from environ import Env
+import dj_database_url
 
-env = Env(DEBUG=(bool, False))
+
+YOGAYU_API_HOST = "api.yogayu.app"
+
+IS_HEROKU_APP = "DYNO" in environ and "CI" not in environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env("SECRET_KEY")
+SECRET_KEY = environ["SECRET_KEY"]
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env("DEBUG")
-
-CLOUDRUN_SERVICE_URL = env("CLOUDRUN_SERVICE_URL")
-
-ALLOWED_HOSTS = [urlparse(CLOUDRUN_SERVICE_URL).hostname]
-
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-
-SECURE_SSL_REDIRECT = True
-
-SESSION_COOKIE_SECURE = True
-
-CSRF_COOKIE_SECURE = True
+if IS_HEROKU_APP:
+    ALLOWED_HOSTS = [YOGAYU_API_HOST]
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_HSTS_SECONDS = 15552000
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+else:
+    # SECURITY WARNING: don't run with debug turned on in production!
+    DEBUG = True
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -44,6 +46,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -72,7 +75,11 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "yogayurest.wsgi.application"
 
-DATABASES = {"default": env.db()}
+DATABASES = {
+    "default": dj_database_url.config(
+        conn_max_age=600, conn_health_checks=True, ssl_require=IS_HEROKU_APP
+    )
+}
 
 AUTH_USER_MODEL = "users.User"
 
@@ -98,16 +105,17 @@ USE_I18N = False
 
 USE_TZ = True
 
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
 STATIC_URL = "static/"
 
 STORAGES = {
-    "default": {"BACKEND": "storages.backends.gcloud.GoogleCloudStorage"},
-    "staticfiles": {"BACKEND": "storages.backends.gcloud.GoogleCloudStorage"},
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    }
 }
 
-GS_BUCKET_NAME = env("GS_BUCKET_NAME")
-
-GS_QUERYSTRING_AUTH = False
+WHITENOISE_KEEP_ONLY_HASHED_FILES = True
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
@@ -124,20 +132,18 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=365),
 }
 
+YOGAYU_API_VERSION = "v1alpha"
+
 SPECTACULAR_SETTINGS = {
     "TITLE": "Yogayu API",
     "DESCRIPTION": (
         "Yogayu REST API for Yogayu mobile app. Provides endpoints for managing yoga levels, yoga poses, "
         "users, and user yoga histories."
     ),
-    "VERSION": "1.0.0",
-    "SERVE_INCLUDE_SCHEMA": False,
-    "SCHEMA_PATH_PREFIX": "/v[1-5](alpha|beta)",
+    "VERSION": None,
+    "SERVERS": [{"url": f"https://{YOGAYU_API_HOST}/{YOGAYU_API_VERSION}"}],
+    "SCHEMA_PATH_PREFIX": f"/{YOGAYU_API_VERSION}",
     "SCHEMA_PATH_PREFIX_TRIM": True,
-    "SERVERS": [
-        {
-            "url": f"{CLOUDRUN_SERVICE_URL}/v1alpha",
-            "description": "v1 Production",
-        }
-    ],
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SERVE_INCLUDE_SCHEMA": False,
 }
