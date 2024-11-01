@@ -1,7 +1,6 @@
 from datetime import timedelta
-from os import environ, getenv
+from os import environ
 from pathlib import Path
-from urllib.parse import urlparse
 
 import dj_database_url
 
@@ -77,7 +76,9 @@ WSGI_APPLICATION = "yogayurest.wsgi.application"
 
 DATABASES = {
     "default": dj_database_url.config(
-        conn_max_age=600, conn_health_checks=True, ssl_require=IS_HEROKU_APP
+        conn_health_checks=True,
+        disable_server_side_cursors=True,
+        ssl_require=IS_HEROKU_APP,
     )
 }
 
