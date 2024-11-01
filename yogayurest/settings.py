@@ -106,14 +106,20 @@ USE_I18N = False
 
 USE_TZ = True
 
+AWS_STORAGE_BUCKET_NAME = environ["AWS_STORAGE_BUCKET_NAME"]
+AWS_S3_REGION_NAME = environ["AWS_S3_REGION_NAME"]
+
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 STATIC_URL = "static/"
 
 STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.s3.S3Storage",
+    },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-    }
+    },
 }
 
 WHITENOISE_KEEP_ONLY_HASHED_FILES = True

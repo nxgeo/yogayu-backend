@@ -1,5 +1,6 @@
 dj-database-url
 Django
+django-storages[s3]
 djangorestframework
 djangorestframework-simplejwt
 drf-spectacular
