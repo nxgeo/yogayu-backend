@@ -51,10 +51,9 @@ class YogaUser(models.Model):
         default_yoga_level = YogaLevel.objects.filter(
             minimum_points__lte=initial_points
         ).last()
-        default_yoga_level_pk = getattr(default_yoga_level, "pk", None)
-        if default_yoga_level_pk is None:
+        if default_yoga_level is None:
             raise ValueError("No matching level found for the given points")
-        return default_yoga_level_pk
+        return default_yoga_level
 
     user = models.OneToOneField(
         User, on_delete=models.CASCADE, related_name="yoga_user", primary_key=True
